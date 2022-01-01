@@ -35,7 +35,7 @@ class Player(pygame.sprite.Sprite):
 
         # Следим ударяем ли мы какой-то другой объект
         ## с этим можешь не разбираться
-        block_hit_list = pygame.sprite.spritecollide(self, self.level.platform_list, False)
+        block_hit_list = pygame.sprite.spritecollide(self, self.level.things_list, False)
         for block in block_hit_list:
             if self.change_x > 0:
                 self.rect.right = block.rect.left
@@ -47,7 +47,7 @@ class Player(pygame.sprite.Sprite):
 
         # То же самое, только для вверх/вниз
         ## с этим тоже
-        block_hit_list = pygame.sprite.spritecollide(self, self.level.platform_list, False)
+        block_hit_list = pygame.sprite.spritecollide(self, self.level.things_list, False)
         for block in block_hit_list:
             if self.change_y > 0:
                 self.rect.bottom = block.rect.top
@@ -76,7 +76,7 @@ class Player(pygame.sprite.Sprite):
         # или другими словами, не находимся ли мы в полете.
         # Для этого опускаемся на 10 единиц, проверем соприкосновение и далее поднимаемся обратно
         self.rect.y += 10
-        platform_hit_list = pygame.sprite.spritecollide(self, self.level.platform_list, False)
+        platform_hit_list = pygame.sprite.spritecollide(self, self.level.things_list, False)
         self.rect.y -= 10
 
         # Если все в порядке, прыгаем вверх
