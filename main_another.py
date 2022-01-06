@@ -3,7 +3,8 @@ import pygame
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 
-# Здесь лишь создание переменной, вывод заднего фона ниже в коде
+
+# Подключение фото для заднего фона
 bg = pygame.image.load('bg.jpg')
 
 
@@ -11,98 +12,112 @@ bg = pygame.image.load('bg.jpg')
 class Player(pygame.sprite.Sprite):
     # Изначально игрок смотрит вправо, поэтому эта переменная True
     right = True
-    # jumped = False
-    # moving = False
 
+    # Методы
     def __init__(self):
         super().__init__()
 
-        self.image = pygame.transform.scale(pygame.image.load('idle.png'), (30, 60))
+        # Создаем изображение для игрока
+        self.image = pygame.image.load('idle.png')
 
         self.rect = self.image.get_rect()
 
         self.change_x = 0
         self.change_y = 0
 
-        self.boost = 0.2
-
     def update(self):
-        # if self.change_y == 0:
-            # self.jumped = False
-
+        # В этой функции мы передвигаем игрока
+        # Сперва устанавливаем для него гравитацию
         self.calc_grav()
-        # self.calc_boost()
 
-        self.rect.x += self.change_x  # * self.boost
+        # Передвигаем его на право/лево
+        # change_x будет меняться позже при нажатии на стрелки клавиатуры
+        self.rect.x += self.change_x
 
-        block_hit_list = pygame.sprite.spritecollide(self, self.level.platform_list, False)
+        # Следим ударяем ли мы какой-то другой объект
+        ## с этим можешь не разбираться
+        block_hit_list = pygame.sprite.spritecollide(self, self.level.things_list, False)
         for block in block_hit_list:
             if self.change_x > 0:
                 self.rect.right = block.rect.left
             elif self.change_x < 0:
                 self.rect.left = block.rect.right
+            if isinstance(block, Door): # проверка: наткнулся ли игрок на дверь
+                self.level_won = True
 
+        # Передвигаемся вверх/вниз
         self.rect.y += self.change_y
 
-        block_hit_list = pygame.sprite.spritecollide(self, self.level.platform_list, False)
+        # То же самое, только для вверх/вниз
+        ## с этим тоже
+        block_hit_list = pygame.sprite.spritecollide(self, self.level.things_list, False)
         for block in block_hit_list:
             if self.change_y > 0:
                 self.rect.bottom = block.rect.top
             elif self.change_y < 0:
                 self.rect.top = block.rect.bottom
+            if isinstance(block, Door): # проверка: наткнулся ли игрок на дверь
+                self.level_won = True
 
+            # Останавливаем вертикальное движение
             self.change_y = 0
 
     def calc_grav(self):
+        # Здесь мы вычисляем как быстро объект будет
+        # падать на землю под действием гравитации
         if self.change_y == 0:
             self.change_y = 1
         else:
-            self.change_y += 0.7
+            self.change_y += 0.95
 
+        # Если уже на земле, то ставим позицию Y как 0
         if self.rect.y >= SCREEN_HEIGHT - self.rect.height and self.change_y >= 0:
             self.change_y = 0
             self.rect.y = SCREEN_HEIGHT - self.rect.height
 
-    # def calc_boost(self):
-    #     if self.moving or self.jumped:
-    #         if self.boost + self.boost ** 2 <= 1:
-    #             self.boost += self.boost ** 2
-    #         else:
-    #             self.boost = 1
-    #     else:
-    #         self.boost = 0.2
-
     def jump(self):
-        # self.jumped = True
-        self.rect.y += 5
-        platform_hit_list = pygame.sprite.spritecollide(self, self.level.platform_list, False)
-        self.rect.y -= 5
+        # Обработка прыжка
+        # Нам нужно проверять здесь, контактируем ли мы с чем-либо
+        # или другими словами, не находимся ли мы в полете.
+        # Для этого опускаемся на 10 единиц, проверем соприкосновение и далее поднимаемся обратно
+        self.rect.y += 10
+        platform_hit_list = pygame.sprite.spritecollide(self, self.level.things_list, False)
+        self.rect.y -= 10
 
+        # Если все в порядке, прыгаем вверх
         if len(platform_hit_list) > 0 or self.rect.bottom >= SCREEN_HEIGHT:
-            self.change_y = -10
+            self.change_y = -16
 
     # Передвижение игрока
     def go_left(self):
-        # self.moving = True
-        self.change_x += -7
-        if self.right:
+        # Сами функции будут вызваны позже из основного цикла
+        self.change_x = -9  # Двигаем игрока по Х
+        if self.right:  # Проверяем куда он смотрит и если что, переворачиваем его
             self.flip()
             self.right = False
 
     def go_right(self):
-        # self.moving = True
-        self.change_x += 7
+        # то же самое, но вправо
+        self.change_x = 9
         if not self.right:
             self.flip()
             self.right = True
 
-    def stop(self):
+    def stop(self):  # останавливает игрока
+        # вызываем этот метод, когда не нажимаем на клавиши
         self.change_x = 0
-        # self.boost = 0.2
-        # self.moving = False
 
     def flip(self):
+        # переворот игрока (зеркальное отражение)
         self.image = pygame.transform.flip(self.image, True, False)
+
+
+# выход на следующий уровень
+class Door(pygame.sprite.Sprite):
+    def __init__(self, width, height):
+        super().__init__()
+        self.image = pygame.transform.scale(pygame.image.load('Door01.png'), (width, height))
+        self.rect = self.image.get_rect()
 
 
 # Класс для описания платформы
@@ -111,56 +126,65 @@ class Platform(pygame.sprite.Sprite):
         # Конструктор платформ
         super().__init__()
         # Также указываем фото платформы
-        self.image = pygame.transform.scale(pygame.image.load('platform.png'), (80, 15))
+        self.image = pygame.image.load('platform.png')
 
-        # Установите ссылку на изображение прямоугольника
         self.rect = self.image.get_rect()
 
 
 # Класс для расстановки платформ на сцене
 class Level(object):
-    def __init__(self, player):
+    def __init__(self, active_sprite_list, player, level_num):
         # Создаем группу спрайтов (поместим платформы различные сюда)
-        self.platform_list = pygame.sprite.Group()
+        self.things_list = pygame.sprite.Group()    ## группа спрайтов, в которой находятся все неподвижные объекты
+                                                                                                            ## уровня
+        self.active_sprite_list = active_sprite_list
+        self.place_door = pygame.sprite.Group()
         # Ссылка на основного игрока
         self.player = player
+        self.init_things(level_num, player)
 
-    # Чтобы все рисовалось, то нужно обновлять экран
+    # Чтение данных из файла, создание платформ и двери (позже здесь могут быть шипы или типа того)
+    def init_things(self, level_num, player):
+        # Текстовой файл с данными про предметы уровня. Данные в таком формате:
+        # ширина, высота, x и y позиция
+        level_file = open(level_num, 'r').read().split('\n')
+        level_platform = []
+        count = 1
+        string = level_file[count]
+        while not (string == 'Door_'):
+            level_platform.append([int(pl) for pl in string.split()])
+            count += 1
+            string = level_file[count]
+        string = level_file[count + 1]
+        door_inf = [int(door) for door in string.split()]
+
+        # Перебираем массив и добавляем каждую платформу в группу спрайтов - platform_list
+        for platform in level_platform:
+            block = Platform(platform[0], platform[1])
+            block.rect.x = platform[2]
+            block.rect.y = platform[3]
+            block.player = self.player
+            self.things_list.add(block)
+
+        # то же самое с дверью
+        door = Door(door_inf[0], door_inf[1])
+        door.rect.x = door_inf[2]
+        door.rect.y = door_inf[3]
+        self.things_list.add(door)
+        self.place_door.add(door)
+
+    # Чтобы все рисовалось, нужно обновлять экран
     # При вызове этого метода обновление будет происходить
     def update(self):
-        self.platform_list.update()
+        self.things_list.update()
 
     # Метод для рисования объектов на сцене
     def draw(self, screen):
         # Рисуем задний фон
         screen.blit(bg, (0, 0))
 
-        # Рисуем все платформы из группы спрайтов
-        self.platform_list.draw(screen)
-
-
-# Класс, что описывает где будут находится все платформы
-# на определенном уровне игры
-class Level_01(Level):
-    def __init__(self, player):
-        # Вызываем родительский конструктор
-        Level.__init__(self, player)
-
-        # Массив с данными про платформы. Данные в таком формате:
-        # ширина, высота, x и y позиция
-        level = [
-            [210, 32, 500, 560],
-            [210, 32, 320, 500],
-            [210, 32, 500, 440],
-        ]
-
-        # Перебираем массив и добавляем каждую платформу в группу спрайтов - platform_list
-        for platform in level:
-            block = Platform(platform[0], platform[1])
-            block.rect.x = platform[2]
-            block.rect.y = platform[3]
-            block.player = self.player
-            self.platform_list.add(block)
+        # Рисуем все платформы, дверь (потом и шипы и все остальное) из группы спрайтов
+        self.things_list.draw(screen)
 
 
 # Основная функция прогарммы
@@ -174,37 +198,49 @@ def main():
 
     # Название игры
     pygame.display.set_caption("Платформер")
+    level_list = ['level_1', 'level_2']
 
     # Создаем игрока
     player = Player()
 
-    # Создаем все уровни
-    level_list = []
-    level_list.append(Level_01(player))
+    active_sprite_list = pygame.sprite.Group()
+    active_sprite_list.add(player)
 
     # Устанавливаем текущий уровень
-    current_level_no = 0
-    current_level = level_list[current_level_no]
+    current_level_num = 0
+    current_level = Level(active_sprite_list, player, level_list[current_level_num])
 
-    active_sprite_list = pygame.sprite.Group()
     player.level = current_level
 
     player.rect.x = 340
     player.rect.y = SCREEN_HEIGHT - player.rect.height
-    active_sprite_list.add(player)
+    player.level_won = False
 
     # Цикл будет до тех пор, пока пользователь не нажмет кнопку закрытия
-    done = True
+    run = True
 
     # Используется для управления скоростью обновления экрана
     clock = pygame.time.Clock()
 
     # Основной цикл программы
-    while done:
+    while run:
         # Отслеживание действий
+        if player.level_won:
+            current_level_num += 1
+            player.stop()
+            player = Player()
+
+            active_sprite_list = pygame.sprite.Group()
+            active_sprite_list.add(player)
+            current_level = Level(active_sprite_list, player, level_list[current_level_num])
+            player.level = current_level
+            player.rect.x = 340
+            player.rect.y = SCREEN_HEIGHT - player.rect.height
+            player.level_won = False
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:  # Если закрыл программу, то останавливаем цикл
-                done = False
+                run = False
 
             # Если нажали на стрелки клавиатуры, то двигаем объект
             if event.type == pygame.KEYDOWN:
