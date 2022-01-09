@@ -6,6 +6,7 @@ SCREEN_HEIGHT = 600
 
 # Подключение фото для заднего фона
 bg = pygame.image.load('bg.jpg')
+bgd = pygame.image.load('bgd.jpg')
 
 
 # Класс, описывающий поведение главного игрока
@@ -187,6 +188,39 @@ class Level(object):
         self.things_list.draw(screen)
 
 
+def start_screen(screen):
+    #Текст заставки
+    text = ["Правила игры:",
+            "Ваша задача дойти до двери.",
+            "Опасайтесь всего подозрительного"]
+
+    fon = pygame.transform.scale(bgd, (SCREEN_WIDTH, SCREEN_HEIGHT))
+    screen.blit(fon, (0, 0))
+    font = pygame.font.Font(None, 0)
+    text_coord = 200
+    font = pygame.font.SysFont('Arial', 32)
+    #Отображение текста на экране
+    for line in text:
+        string_rendered = font.render(line, 1, pygame.Color('white'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 10
+        intro_rect.top = text_coord
+        intro_rect.x = 220
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+
+        run = True
+
+    #Ожидание готовности
+    while run:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+            if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                return
+        pygame.display.flip()
+
+
 # Основная функция прогарммы
 def main():
     # Инициализация
@@ -221,6 +255,9 @@ def main():
 
     # Используется для управления скоростью обновления экрана
     clock = pygame.time.Clock()
+
+    #Заставка
+    start_screen(screen)
 
     # Основной цикл программы
     while run:
