@@ -22,7 +22,6 @@ class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
 
-        # Создаем изображение для игрока
         self.image = pygame.image.load('idle.png')
 
         self.rect = self.image.get_rect()
@@ -134,6 +133,16 @@ class Door(pygame.sprite.Sprite):
         super().__init__()
         self.image = pygame.transform.scale(pygame.image.load('Door01.png'), (width, height))
         self.rect = self.image.get_rect()
+
+
+# Значок звезды в углу
+## задается в Level()
+class Star_icon(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = pygame.image.load('grey_starIcon.png')
+        self.rect = self.image.get_rect()
+        ###
 
 
 # Класс для описания платформы
@@ -316,7 +325,7 @@ def main():
     # Используется для управления скоростью обновления экрана
     clock = pygame.time.Clock()
 
-    #Заставка
+    # Заставка
     start_screen(screen)
 
     # Основной цикл программы
