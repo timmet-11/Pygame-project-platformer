@@ -3,6 +3,10 @@ import pygame
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 
+#Присваеваем одной переменной количество всех уровней а другой количество очков
+number_of_levels = 2
+score = 0
+
 
 # Подключение фото для заднего фона
 bg = pygame.image.load('bg.jpg')
@@ -113,6 +117,17 @@ class Player(pygame.sprite.Sprite):
         self.image = pygame.transform.flip(self.image, True, False)
 
 
+class Trap(pygame.sprite.Sprite):
+    def __init__(self, width, height):
+        super().__init__()
+        self.image = pygame.image.load('trap.png')
+        self.image = self.image.convert()
+        self.key = self.image.get_at((0, 0))
+        self.image.set_colorkey(self.key)
+        self.image = pygame.transform.scale(self.image, (width, height))
+        self.rect = self.image.get_rect()
+
+
 # выход на следующий уровень
 class Door(pygame.sprite.Sprite):
     def __init__(self, width, height):
@@ -188,6 +203,7 @@ class Level(object):
         self.things_list.draw(screen)
 
 
+#Заставка
 def start_screen(screen):
     #Текст заставки
     text = ["Правила игры:",
@@ -219,6 +235,50 @@ def start_screen(screen):
             if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                 return
         pygame.display.flip()
+
+
+#Экран окончания уровня
+def end_level_screen(screen):
+    #Текст
+    text = []
+
+    fon = pygame.transform.scale(bgd, (SCREEN_WIDTH, SCREEN_HEIGHT))
+    screen.blit(fon, (0, 0))
+
+    for line in text:
+        pass
+
+    run = True
+
+    #Ожидание готовности
+    while run:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+            if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                return
+        pygame.display.flip()
+
+
+#Экран окончания игры
+def end_game_screen(screen):
+    #Текст
+    text = []
+
+    fon = pygame.transform.scale(bgd, (SCREEN_WIDTH, SCREEN_HEIGHT))
+    screen.blit(fon, (0, 0))
+
+    for line in text:
+        pass
+
+    run = True
+
+    while run:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+            if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                return
 
 
 # Основная функция прогарммы
@@ -264,16 +324,21 @@ def main():
         # Отслеживание действий
         if player.level_won:
             current_level_num += 1
-            player.stop()
-            player = Player()
+            if current_level_num > number_of_levels:
+                end_game_screen(screen)
+                run = False
+            else:
+                end_level_screen(screen)
+                player.stop()
+                player = Player()
 
-            active_sprite_list = pygame.sprite.Group()
-            active_sprite_list.add(player)
-            current_level = Level(active_sprite_list, player, level_list[current_level_num])
-            player.level = current_level
-            player.rect.x = 340
-            player.rect.y = SCREEN_HEIGHT - player.rect.height
-            player.level_won = False
+                active_sprite_list = pygame.sprite.Group()
+                active_sprite_list.add(player)
+                current_level = Level(active_sprite_list, player, level_list[current_level_num])
+                player.level = current_level
+                player.rect.x = 340
+                player.rect.y = SCREEN_HEIGHT - player.rect.height
+                player.level_won = False
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:  # Если закрыл программу, то останавливаем цикл
