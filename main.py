@@ -135,16 +135,6 @@ class Door(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
 
 
-# Значок звезды в углу
-## задается в Level()
-class Star_icon(pygame.sprite.Sprite):
-    def __init__(self):
-        super().__init__()
-        self.image = pygame.image.load('grey_starIcon.png')
-        self.rect = self.image.get_rect()
-        ###
-
-
 # Класс для описания платформы
 class Platform(pygame.sprite.Sprite):
     def __init__(self, width, height):
