@@ -1,7 +1,7 @@
 import pygame
 import sys
 
-SCREEN_WIDTH = 800
+SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 600
 
 #Присваеваем одной переменной количество всех уровней а другой количество очков
@@ -11,6 +11,7 @@ score = 0
 
 # Подключение фото для заднего фона
 bg = pygame.image.load('bg.jpg')
+bg = pygame.transform.scale(bg, (SCREEN_WIDTH, SCREEN_HEIGHT))
 bgd = pygame.image.load('bgd.jpg')
 
 
@@ -24,7 +25,7 @@ class Player(pygame.sprite.Sprite):
         super().__init__()
 
         self.image = pygame.image.load('idle.png')
-
+        self.image = pygame.transform.scale(self.image, (35, 50))
         self.rect = self.image.get_rect()
 
         self.change_x = 0
@@ -144,7 +145,7 @@ class Platform(pygame.sprite.Sprite):
         super().__init__()
         # Также указываем фото платформы
         self.image = pygame.image.load('platform.png')
-
+        self.image = pygame.transform.scale(self.image, (width, height))
         self.rect = self.image.get_rect()
 
 
@@ -296,10 +297,18 @@ def end_game_screen(screen):
                 return
 
 
+def music():
+    pygame.mixer.music.load("ethernight-club-by-kevin-macleod-from-filmmusic-io.mp3")
+    pygame.mixer.music.play(loops=-1, start=0.0, fade_ms=0)
+    pygame.mixer.music.set_volume(0.2)
+
+
 # Основная функция прогарммы
 def main():
     # Инициализация
+    pygame.mixer.pre_init(frequency=44100, size=-16, channels=1, buffer=512, devicename=None)
     pygame.init()
+    music()
 
     # Установка высоты и ширины
     size = [SCREEN_WIDTH, SCREEN_HEIGHT]
@@ -307,7 +316,8 @@ def main():
 
     # Название игры
     pygame.display.set_caption("Платформер")
-    level_list = ['level_1', 'level_2']
+    level_list = ['level_1', 'level_2', 'level_3', 'level_4', 'level_5']
+    number_of_levels = 4
 
     # Создаем игрока
     player = Player()
