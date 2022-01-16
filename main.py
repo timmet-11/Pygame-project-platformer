@@ -5,7 +5,7 @@ SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 600
 
 #Присваеваем одной переменной количество всех уровней а другой количество очков
-number_of_levels = 2
+number_of_levels = 4
 
 
 
@@ -42,7 +42,7 @@ class Player(pygame.sprite.Sprite):
 
         # Следим ударяем ли мы какой-то другой объект
         ## с этим можешь не разбираться
-        block_hit_list = pygame.sprite.spritecollide(self, self.level.active_sprite_list, False)
+        block_hit_list = pygame.sprite.spritecollide(self, self.level.things_list, False)
         for block in block_hit_list:
             if self.change_x > 0:
                 self.rect.right = block.rect.left
@@ -60,7 +60,7 @@ class Player(pygame.sprite.Sprite):
 
         # То же самое, только для вверх/вниз
         ## с этим тоже
-        block_hit_list = pygame.sprite.spritecollide(self, self.level.active_sprite_list, False)
+        block_hit_list = pygame.sprite.spritecollide(self, self.level.things_list, False)
         for block in block_hit_list:
             if self.change_y > 0:
                 self.rect.bottom = block.rect.top
@@ -95,7 +95,7 @@ class Player(pygame.sprite.Sprite):
         # или другими словами, не находимся ли мы в полете.
         # Для этого опускаемся на 10 единиц, проверем соприкосновение и далее поднимаемся обратно
         self.rect.y += 10
-        platform_hit_list = pygame.sprite.spritecollide(self, self.level.active_sprite_list, False)
+        platform_hit_list = pygame.sprite.spritecollide(self, self.level.things_list, False)
         self.rect.y -= 10
 
         # Если все в порядке, прыгаем вверх
@@ -127,11 +127,22 @@ class Player(pygame.sprite.Sprite):
 
 
 class Star(pygame.sprite.Sprite):
-    def __init__(self, width, height):
+    def __init__(self, width, height, player=None, level=None):
         super().__init__()
         self.image = pygame.image.load('starIcon.png')
         self.image = pygame.transform.scale(self.image, (width, height))
         self.rect = self.image.get_rect()
+        self.player = player
+        self.level = level
+
+    def update(self):
+        if pygame.sprite.spritecollide(self, self.level.active_sprite_list, False):
+            self.level.active_sprite_list.remove(Star)
+            active_star = Star(40, 40)
+            active_star.rect.x = 20
+            active_star.rect.y = 20
+            self.level.active_sprite_list.add(active_star)
+
 
 
 class Grey_Star(pygame.sprite.Sprite):
@@ -177,6 +188,7 @@ class Level(object):
                                                                                                             ## уровня
         self.active_sprite_list = active_sprite_list
         self.place_door = pygame.sprite.Group()
+        self.star_g = pygame.sprite.Group()
         # Ссылка на основного игрока
         self.player = player
         self.init_things(level_num, player)
@@ -215,7 +227,6 @@ class Level(object):
             block.rect.y = platform[3]
             block.player = self.player
             self.things_list.add(block)
-            self.active_sprite_list.add(block)
 
         for trap in level_trap:
             tr = Trap(trap[0], trap[1])
@@ -225,11 +236,11 @@ class Level(object):
             self.things_list.add(tr)
 
         for star in level_star:
-            st = Star(star[0], star[1])
+            st = Star(star[0], star[1], player, self)
             st.rect.x = star[2]
             st.rect.y = star[3]
             st.player = self.player
-            self.things_list.add(st)
+            self.active_sprite_list.add(st)
 
         grey_star = Grey_Star(40, 40)
         grey_star.rect.x = 20
@@ -247,6 +258,8 @@ class Level(object):
     # При вызове этого метода обновление будет происходить
     def update(self):
         self.things_list.update()
+        self.star_g.update()
+        self.active_sprite_list.update()
 
     # Метод для рисования объектов на сцене
     def draw(self, screen):
@@ -255,6 +268,8 @@ class Level(object):
 
         # Рисуем все платформы, дверь (потом и шипы и все остальное) из группы спрайтов
         self.things_list.draw(screen)
+        self.active_sprite_list.draw(screen)
+
 
 
 #Заставка
@@ -419,14 +434,6 @@ def main():
             player.level_won = False
             player.die = False
             player.star = False
-        if player.star:
-            active_sprite_list.remove(Star)
-            active_star = Star(40, 40)
-            active_star.rect.x = 20
-            active_star.rect.y = 20
-            active_sprite_list.add(active_star)
-            player.star = False
-            print(active_sprite_list)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:  # Если закрыл программу, то останавливаем цикл
@@ -448,7 +455,6 @@ def main():
                     player.stop()
 
         # Обновляем игрока
-        active_sprite_list.update()
 
         # Обновляем объекты на сцене
         current_level.update()
@@ -463,7 +469,6 @@ def main():
 
         # Рисуем объекты на окне
         current_level.draw(screen)
-        active_sprite_list.draw(screen)
 
         # Устанавливаем количество фреймов
         clock.tick(30)
