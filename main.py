@@ -6,7 +6,7 @@ SCREEN_HEIGHT = 600
 
 #Присваеваем одной переменной количество всех уровней а другой количество очков
 number_of_levels = 2
-score = 0
+
 
 
 # Подключение фото для заднего фона
@@ -41,7 +41,7 @@ class Player(pygame.sprite.Sprite):
 
         # Следим ударяем ли мы какой-то другой объект
         ## с этим можешь не разбираться
-        block_hit_list = pygame.sprite.spritecollide(self, self.level.things_list, False)
+        block_hit_list = pygame.sprite.spritecollide(self, self.level.active_sprite_list, False)
         for block in block_hit_list:
             if self.change_x > 0:
                 self.rect.right = block.rect.left
@@ -51,13 +51,15 @@ class Player(pygame.sprite.Sprite):
                 self.level_won = True
             if isinstance(block, Trap):
                 self.die = True
+            if isinstance(block, Star):
+                self.star = True
 
         # Передвигаемся вверх/вниз
         self.rect.y += self.change_y
 
         # То же самое, только для вверх/вниз
         ## с этим тоже
-        block_hit_list = pygame.sprite.spritecollide(self, self.level.things_list, False)
+        block_hit_list = pygame.sprite.spritecollide(self, self.level.active_sprite_list, False)
         for block in block_hit_list:
             if self.change_y > 0:
                 self.rect.bottom = block.rect.top
@@ -67,6 +69,8 @@ class Player(pygame.sprite.Sprite):
                 self.level_won = True
             if isinstance(block, Trap):
                 self.die = True
+            if isinstance(block, Star):
+                self.star = True
 
             # Останавливаем вертикальное движение
             self.change_y = 0
@@ -90,7 +94,7 @@ class Player(pygame.sprite.Sprite):
         # или другими словами, не находимся ли мы в полете.
         # Для этого опускаемся на 10 единиц, проверем соприкосновение и далее поднимаемся обратно
         self.rect.y += 10
-        platform_hit_list = pygame.sprite.spritecollide(self, self.level.things_list, False)
+        platform_hit_list = pygame.sprite.spritecollide(self, self.level.active_sprite_list, False)
         self.rect.y -= 10
 
         # Если все в порядке, прыгаем вверх
@@ -119,6 +123,22 @@ class Player(pygame.sprite.Sprite):
     def flip(self):
         # переворот игрока (зеркальное отражение)
         self.image = pygame.transform.flip(self.image, True, False)
+
+
+class Star(pygame.sprite.Sprite):
+    def __init__(self, width, height):
+        super().__init__()
+        self.image = pygame.image.load('starIcon.png')
+        self.image = pygame.transform.scale(self.image, (width, height))
+        self.rect = self.image.get_rect()
+
+
+class Grey_Star(pygame.sprite.Sprite):
+    def __init__(self, width, height):
+        super().__init__()
+        self.image = pygame.image.load('grey_starIcon.png')
+        self.image = pygame.transform.scale(self.image, (width, height))
+        self.rect = self.image.get_rect()
 
 
 class Trap(pygame.sprite.Sprite):
@@ -167,6 +187,7 @@ class Level(object):
         level_file = open(level_num, 'r').read().split('\n')
         level_platform = []
         level_trap = []
+        level_star = []
         count = 1
         string = level_file[count]
         while not (string == 'Trap_'):
@@ -174,8 +195,13 @@ class Level(object):
             count += 1
             string = level_file[count]
         string = level_file[count + 1]
-        while not (string == 'Door_'):
+        while not (string == 'Star_'):
             level_trap.append([int(tr) for tr in string.split()])
+            count += 1
+            string = level_file[count]
+        string = level_file[count + 1]
+        while not (string == 'Door_'):
+            level_star.append([int(st) for st in string.split()])
             count += 1
             string = level_file[count]
         string = level_file[count + 1]
@@ -188,6 +214,7 @@ class Level(object):
             block.rect.y = platform[3]
             block.player = self.player
             self.things_list.add(block)
+            self.active_sprite_list.add(block)
 
         for trap in level_trap:
             tr = Trap(trap[0], trap[1])
@@ -196,6 +223,17 @@ class Level(object):
             tr.player = self.player
             self.things_list.add(tr)
 
+        for star in level_star:
+            st = Star(star[0], star[1])
+            st.rect.x = star[2]
+            st.rect.y = star[3]
+            st.player = self.player
+            self.things_list.add(st)
+
+        grey_star = Grey_Star(40, 40)
+        grey_star.rect.x = 20
+        grey_star.rect.y = 20
+        self.things_list.add(grey_star)
 
         # то же самое с дверью
         door = Door(door_inf[0], door_inf[1])
@@ -228,15 +266,15 @@ def start_screen(screen):
     fon = pygame.transform.scale(bgd, (SCREEN_WIDTH, SCREEN_HEIGHT))
     screen.blit(fon, (0, 0))
     font = pygame.font.Font(None, 0)
-    text_coord = 200
-    font = pygame.font.SysFont('Arial', 32)
+    text_coord = 40
+    font = pygame.font.SysFont('Taraxacum', 32)
     #Отображение текста на экране
     for line in text:
         string_rendered = font.render(line, 1, pygame.Color('white'))
         intro_rect = string_rendered.get_rect()
         text_coord += 10
         intro_rect.top = text_coord
-        intro_rect.x = 220
+        intro_rect.x = 20
         text_coord += intro_rect.height
         screen.blit(string_rendered, intro_rect)
 
@@ -325,6 +363,7 @@ def main():
     player.rect.y = SCREEN_HEIGHT - player.rect.height
     player.level_won = False
     player.die = False
+    player.star = False
 
     # Цикл будет до тех пор, пока пользователь не нажмет кнопку закрытия
     run = True
@@ -356,6 +395,7 @@ def main():
                 player.rect.y = SCREEN_HEIGHT - player.rect.height
                 player.level_won = False
                 player.die = False
+                player.star = False
         if player.die:
             player.stop()
             player = Player()
@@ -368,6 +408,15 @@ def main():
             player.rect.y = SCREEN_HEIGHT - player.rect.height
             player.level_won = False
             player.die = False
+            player.star = False
+        if player.star:
+            active_sprite_list.remove(Star)
+            active_star = Star(40, 40)
+            active_star.rect.x = 20
+            active_star.rect.y = 20
+            active_sprite_list.add(active_star)
+            player.star = False
+            print(active_sprite_list)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:  # Если закрыл программу, то останавливаем цикл
