@@ -1,4 +1,5 @@
 import pygame
+import sys
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
@@ -48,6 +49,8 @@ class Player(pygame.sprite.Sprite):
                 self.rect.left = block.rect.right
             if isinstance(block, Door): # проверка: наткнулся ли игрок на дверь
                 self.level_won = True
+            if isinstance(block, Trap):
+                self.die = True
 
         # Передвигаемся вверх/вниз
         self.rect.y += self.change_y
@@ -62,6 +65,8 @@ class Player(pygame.sprite.Sprite):
                 self.rect.top = block.rect.bottom
             if isinstance(block, Door): # проверка: наткнулся ли игрок на дверь
                 self.level_won = True
+            if isinstance(block, Trap):
+                self.die = True
 
             # Останавливаем вертикальное движение
             self.change_y = 0
@@ -120,9 +125,6 @@ class Trap(pygame.sprite.Sprite):
     def __init__(self, width, height):
         super().__init__()
         self.image = pygame.image.load('trap.png')
-        self.image = self.image.convert()
-        self.key = self.image.get_at((0, 0))
-        self.image.set_colorkey(self.key)
         self.image = pygame.transform.scale(self.image, (width, height))
         self.rect = self.image.get_rect()
 
@@ -164,10 +166,16 @@ class Level(object):
         # ширина, высота, x и y позиция
         level_file = open(level_num, 'r').read().split('\n')
         level_platform = []
+        level_trap = []
         count = 1
         string = level_file[count]
-        while not (string == 'Door_'):
+        while not (string == 'Trap_'):
             level_platform.append([int(pl) for pl in string.split()])
+            count += 1
+            string = level_file[count]
+        string = level_file[count + 1]
+        while not (string == 'Door_'):
+            level_trap.append([int(tr) for tr in string.split()])
             count += 1
             string = level_file[count]
         string = level_file[count + 1]
@@ -180,6 +188,14 @@ class Level(object):
             block.rect.y = platform[3]
             block.player = self.player
             self.things_list.add(block)
+
+        for trap in level_trap:
+            tr = Trap(trap[0], trap[1])
+            tr.rect.x = trap[2]
+            tr.rect.y = trap[3]
+            tr.player = self.player
+            self.things_list.add(tr)
+
 
         # то же самое с дверью
         door = Door(door_inf[0], door_inf[1])
@@ -230,7 +246,7 @@ def start_screen(screen):
     while run:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
+                sys.exit()
             if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                 return
         pygame.display.flip()
@@ -253,7 +269,7 @@ def end_level_screen(screen):
     while run:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
+                sys.exit()
             if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                 return
         pygame.display.flip()
@@ -275,7 +291,7 @@ def end_game_screen(screen):
     while run:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
+                sys.exit()
             if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                 return
 
@@ -308,6 +324,7 @@ def main():
     player.rect.x = 340
     player.rect.y = SCREEN_HEIGHT - player.rect.height
     player.level_won = False
+    player.die = False
 
     # Цикл будет до тех пор, пока пользователь не нажмет кнопку закрытия
     run = True
@@ -325,7 +342,7 @@ def main():
             current_level_num += 1
             if current_level_num > number_of_levels:
                 end_game_screen(screen)
-                run = False
+                sys.exit()
             else:
                 end_level_screen(screen)
                 player.stop()
@@ -338,10 +355,23 @@ def main():
                 player.rect.x = 340
                 player.rect.y = SCREEN_HEIGHT - player.rect.height
                 player.level_won = False
+                player.die = False
+        if player.die:
+            player.stop()
+            player = Player()
+
+            active_sprite_list = pygame.sprite.Group()
+            active_sprite_list.add(player)
+            current_level = Level(active_sprite_list, player, level_list[current_level_num])
+            player.level = current_level
+            player.rect.x = 340
+            player.rect.y = SCREEN_HEIGHT - player.rect.height
+            player.level_won = False
+            player.die = False
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:  # Если закрыл программу, то останавливаем цикл
-                run = False
+                sys.exit()
 
             # Если нажали на стрелки клавиатуры, то двигаем объект
             if event.type == pygame.KEYDOWN:
@@ -381,9 +411,6 @@ def main():
 
         # Обновляем экран после рисования объектов
         pygame.display.flip()
-
-    # Корректное закртытие программы
-    pygame.quit()
 
 
 main()
