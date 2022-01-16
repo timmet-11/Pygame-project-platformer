@@ -187,10 +187,18 @@ class Level(object):
         self.things_list.draw(screen)
 
 
+def music():
+    pygame.mixer.music.load("ethernight-club-by-kevin-macleod-from-filmmusic-io.mp3")
+    pygame.mixer.music.play(loops=-1, start=0.0, fade_ms=0)
+    pygame.mixer.music.set_volume(0.2)
+
+
 # Основная функция прогарммы
 def main():
     # Инициализация
+    pygame.mixer.pre_init(frequency=44100, size=-16, channels=1, buffer=512, devicename=None)
     pygame.init()
+    music()
 
     # Установка высоты и ширины
     size = [SCREEN_WIDTH, SCREEN_HEIGHT]
