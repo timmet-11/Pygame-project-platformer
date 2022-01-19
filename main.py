@@ -32,6 +32,7 @@ class Player(pygame.sprite.Sprite):
         self.change_y = 0
 
     def update(self):
+        global this_star
         # В этой функции мы передвигаем игрока
         # Сперва устанавливаем для него гравитацию
         self.calc_grav()
@@ -54,6 +55,7 @@ class Player(pygame.sprite.Sprite):
                 self.die = True
             if isinstance(block, Star):
                 self.star = True
+                this_star.die()
 
         # Передвигаемся вверх/вниз
         self.rect.y += self.change_y
@@ -72,6 +74,7 @@ class Player(pygame.sprite.Sprite):
                 self.die = True
             if isinstance(block, Star):
                 self.star = True
+                this_star.die()
 
             # Останавливаем вертикальное движение
             self.change_y = 0
@@ -127,20 +130,17 @@ class Player(pygame.sprite.Sprite):
 
 
 class Star(pygame.sprite.Sprite):
-    def __init__(self, width, height, group, player=None, level=None):
+    def __init__(self, width, height):
         super().__init__()
         self.image = pygame.image.load('starIcon.png')
         self.image = pygame.transform.scale(self.image, (width, height))
         self.rect = self.image.get_rect()
-        self.player = player
-        self.level = level
-        self.group = group
 
-    def update(self):
-        block_hit_list = pygame.sprite.spritecollide(self, self.group, False)
-        for block in block_hit_list:
-            if isinstance(block, Player):
-                self.kill()
+    def die(self):
+        self.kill()
+
+
+this_star = Star(50, 50)
 
 
 class Grey_Star(pygame.sprite.Sprite):
@@ -193,6 +193,7 @@ class Level(object):
     def init_things(self, level_num, player):
         # Текстовой файл с данными про предметы уровня. Данные в таком формате:
         # ширина, высота, x и y позиция
+        global this_star
         level_file = open(level_num, 'r').read().split('\n')
         level_platform = []
         level_trap = []
@@ -232,11 +233,12 @@ class Level(object):
             self.things_list.add(tr)
 
         for star in level_star:
-            st = Star(star[0], star[1], self.active_sprite_list, player, self)
+            st = Star(star[0], star[1])
             st.rect.x = star[2]
             st.rect.y = star[3]
             st.player = self.player
-            self.things_list.add(st)
+            this_star = st
+            self.things_list.add(this_star)
 
         grey_star = Grey_Star(50, 50)
         grey_star.rect.x = 20
@@ -429,7 +431,7 @@ def main():
             player.die = False
             player.star = False
         if player.star:
-            star = Star(50, 50, player)
+            star = Star(50, 50)
             star.rect.x = 20
             star.rect.y = 20
             active_sprite_list.add(star)
@@ -458,7 +460,6 @@ def main():
 
         # Обновляем объекты на сцене
         current_level.update()
-        Star.update()
 
         # Если игрок приблизится к правой стороне, то дальше его не двигаем
         if player.rect.right > SCREEN_WIDTH:
