@@ -127,22 +127,20 @@ class Player(pygame.sprite.Sprite):
 
 
 class Star(pygame.sprite.Sprite):
-    def __init__(self, width, height, player=None, level=None):
+    def __init__(self, width, height, group, player=None, level=None):
         super().__init__()
         self.image = pygame.image.load('starIcon.png')
         self.image = pygame.transform.scale(self.image, (width, height))
         self.rect = self.image.get_rect()
         self.player = player
         self.level = level
+        self.group = group
 
     def update(self):
-        if pygame.sprite.spritecollide(self, self.level.active_sprite_list, False):
-            self.level.active_sprite_list.remove(Star)
-            active_star = Star(40, 40)
-            active_star.rect.x = 20
-            active_star.rect.y = 20
-            self.level.active_sprite_list.add(active_star)
-
+        block_hit_list = pygame.sprite.spritecollide(self, self.group, False)
+        for block in block_hit_list:
+            if isinstance(block, Player):
+                self.kill()
 
 
 class Grey_Star(pygame.sprite.Sprite):
@@ -187,8 +185,6 @@ class Level(object):
         self.things_list = pygame.sprite.Group()    ## группа спрайтов, в которой находятся все неподвижные объекты
                                                                                                             ## уровня
         self.active_sprite_list = active_sprite_list
-        self.place_door = pygame.sprite.Group()
-        self.star_g = pygame.sprite.Group()
         # Ссылка на основного игрока
         self.player = player
         self.init_things(level_num, player)
@@ -236,13 +232,13 @@ class Level(object):
             self.things_list.add(tr)
 
         for star in level_star:
-            st = Star(star[0], star[1], player, self)
+            st = Star(star[0], star[1], self.active_sprite_list, player, self)
             st.rect.x = star[2]
             st.rect.y = star[3]
             st.player = self.player
-            self.active_sprite_list.add(st)
+            self.things_list.add(st)
 
-        grey_star = Grey_Star(40, 40)
+        grey_star = Grey_Star(50, 50)
         grey_star.rect.x = 20
         grey_star.rect.y = 20
         self.things_list.add(grey_star)
@@ -252,13 +248,11 @@ class Level(object):
         door.rect.x = door_inf[2]
         door.rect.y = door_inf[3]
         self.things_list.add(door)
-        self.place_door.add(door)
 
     # Чтобы все рисовалось, нужно обновлять экран
     # При вызове этого метода обновление будет происходить
     def update(self):
         self.things_list.update()
-        self.star_g.update()
         self.active_sprite_list.update()
 
     # Метод для рисования объектов на сцене
@@ -434,6 +428,12 @@ def main():
             player.level_won = False
             player.die = False
             player.star = False
+        if player.star:
+            star = Star(50, 50, player)
+            star.rect.x = 20
+            star.rect.y = 20
+            active_sprite_list.add(star)
+            player.star = False
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:  # Если закрыл программу, то останавливаем цикл
@@ -458,6 +458,7 @@ def main():
 
         # Обновляем объекты на сцене
         current_level.update()
+        Star.update()
 
         # Если игрок приблизится к правой стороне, то дальше его не двигаем
         if player.rect.right > SCREEN_WIDTH:
