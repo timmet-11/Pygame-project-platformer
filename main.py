@@ -6,6 +6,7 @@ SCREEN_HEIGHT = 600
 
 #Присваеваем одной переменной количество всех уровней а другой количество очков
 number_of_levels = 4
+score = 0
 
 
 
@@ -24,8 +25,8 @@ class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
 
-        self.image = pygame.image.load('idle.png')
-        self.image = pygame.transform.scale(self.image, (35, 50))
+        self.image = pygame.image.load('dino.png')
+        self.image = pygame.transform.scale(self.image, (45, 70))
         self.rect = self.image.get_rect()
 
         self.change_x = 0
@@ -53,9 +54,8 @@ class Player(pygame.sprite.Sprite):
                 self.level_won = True
             if isinstance(block, Trap):
                 self.die = True
-            if isinstance(block, Star):
-                self.star = True
-                this_star.die()
+            if isinstance(block, Chest):
+                self.chest = True
 
         # Передвигаемся вверх/вниз
         self.rect.y += self.change_y
@@ -72,9 +72,8 @@ class Player(pygame.sprite.Sprite):
                 self.level_won = True
             if isinstance(block, Trap):
                 self.die = True
-            if isinstance(block, Star):
-                self.star = True
-                this_star.die()
+            if isinstance(block, Chest):
+                self.chest = True
 
             # Останавливаем вертикальное движение
             self.change_y = 0
@@ -129,18 +128,20 @@ class Player(pygame.sprite.Sprite):
         self.image = pygame.transform.flip(self.image, True, False)
 
 
+class Chest(pygame.sprite.Sprite):
+    def __init__(self, width, height):
+        super().__init__()
+        self.image = pygame.image.load('treasure.png')
+        self.image = pygame.transform.scale(self.image, (width, height))
+        self.rect = self.image.get_rect()
+
+
 class Star(pygame.sprite.Sprite):
     def __init__(self, width, height):
         super().__init__()
         self.image = pygame.image.load('starIcon.png')
         self.image = pygame.transform.scale(self.image, (width, height))
         self.rect = self.image.get_rect()
-
-    def die(self):
-        self.kill()
-
-
-this_star = Star(50, 50)
 
 
 class Grey_Star(pygame.sprite.Sprite):
@@ -193,11 +194,9 @@ class Level(object):
     def init_things(self, level_num, player):
         # Текстовой файл с данными про предметы уровня. Данные в таком формате:
         # ширина, высота, x и y позиция
-        global this_star
         level_file = open(level_num, 'r').read().split('\n')
         level_platform = []
         level_trap = []
-        level_star = []
         count = 1
         string = level_file[count]
         while not (string == 'Trap_'):
@@ -205,16 +204,13 @@ class Level(object):
             count += 1
             string = level_file[count]
         string = level_file[count + 1]
-        while not (string == 'Star_'):
+        while not (string == 'Chest_'):
             level_trap.append([int(tr) for tr in string.split()])
             count += 1
             string = level_file[count]
         string = level_file[count + 1]
-        while not (string == 'Door_'):
-            level_star.append([int(st) for st in string.split()])
-            count += 1
-            string = level_file[count]
-        string = level_file[count + 1]
+        chest_inf = [int(ch) for ch in string.split()]
+        string = level_file[count + 3]
         door_inf = [int(door) for door in string.split()]
 
         # Перебираем массив и добавляем каждую платформу в группу спрайтов - platform_list
@@ -232,18 +228,15 @@ class Level(object):
             tr.player = self.player
             self.things_list.add(tr)
 
-        for star in level_star:
-            st = Star(star[0], star[1])
-            st.rect.x = star[2]
-            st.rect.y = star[3]
-            st.player = self.player
-            this_star = st
-            self.things_list.add(this_star)
-
         grey_star = Grey_Star(50, 50)
         grey_star.rect.x = 20
         grey_star.rect.y = 20
         self.things_list.add(grey_star)
+
+        chest = Chest(chest_inf[0], chest_inf[1])
+        chest.rect.x = chest_inf[2]
+        chest.rect.y = chest_inf[3]
+        self.things_list.add(chest)
 
         # то же самое с дверью
         door = Door(door_inf[0], door_inf[1])
@@ -305,13 +298,26 @@ def start_screen(screen):
 #Экран окончания уровня
 def end_level_screen(screen):
     #Текст
-    text = []
+    global score
+    s = 'Ваш текущий счет состовляет ' + str(score) + ' очков'
+    text = ['Вы прошли уровень',
+            s,
+            'Для продолжения нажмите на любую кнопку']
 
     fon = pygame.transform.scale(bgd, (SCREEN_WIDTH, SCREEN_HEIGHT))
     screen.blit(fon, (0, 0))
+    font = pygame.font.Font(None, 0)
+    text_coord = 40
+    font = pygame.font.SysFont('Taraxacum', 32)
 
     for line in text:
-        pass
+        string_rendered = font.render(line, 1, pygame.Color('white'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 10
+        intro_rect.top = text_coord
+        intro_rect.x = 20
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
 
     run = True
 
@@ -328,13 +334,26 @@ def end_level_screen(screen):
 #Экран окончания игры
 def end_game_screen(screen):
     #Текст
-    text = []
+    global score
+    s = 'Ваш финальный счет ' + str(score) + ' очков'
+    text = ['Поздравляем',
+            'Вы прошли игру',
+            s]
 
     fon = pygame.transform.scale(bgd, (SCREEN_WIDTH, SCREEN_HEIGHT))
     screen.blit(fon, (0, 0))
+    font = pygame.font.Font(None, 0)
+    text_coord = 40
+    font = pygame.font.SysFont('Taraxacum', 32)
 
     for line in text:
-        pass
+        string_rendered = font.render(line, 1, pygame.Color('white'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 10
+        intro_rect.top = text_coord
+        intro_rect.x = 20
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
 
     run = True
 
@@ -344,7 +363,41 @@ def end_game_screen(screen):
                 sys.exit()
             if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                 return
+        pygame.display.flip()
 
+
+def die_screen(screen):
+    global score
+    s = 'Сейчас у вас ' + str(score) + ' очков'
+    text = ['Вы проиграли',
+            s,
+            'Нажимите любую кнопку для продолжения']
+
+    fon = pygame.transform.scale(bgd, (SCREEN_WIDTH, SCREEN_HEIGHT))
+    screen.blit(fon, (0, 0))
+    font = pygame.font.Font(None, 0)
+    text_coord = 40
+    font = pygame.font.SysFont('Taraxacum', 32)
+
+    for line in text:
+        string_rendered = font.render(line, 1, pygame.Color('white'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 10
+        intro_rect.top = text_coord
+        intro_rect.x = 20
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+
+    run = True
+
+    # Ожидание готовности
+    while run:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                sys.exit()
+            if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                return
+        pygame.display.flip()
 
 def music():
     pygame.mixer.music.load("ethernight-club-by-kevin-macleod-from-filmmusic-io.mp3")
@@ -384,7 +437,9 @@ def main():
     player.rect.y = SCREEN_HEIGHT - player.rect.height
     player.level_won = False
     player.die = False
-    player.star = False
+    player.chest = False
+    player.chest_now = False
+    global score
 
     # Цикл будет до тех пор, пока пользователь не нажмет кнопку закрытия
     run = True
@@ -399,6 +454,9 @@ def main():
     while run:
         # Отслеживание действий
         if player.level_won:
+            score += (current_level_num + 1) * 1500
+            if player.chest:
+                score += (current_level_num + 1) * 800
             current_level_num += 1
             if current_level_num > number_of_levels:
                 end_game_screen(screen)
@@ -416,8 +474,10 @@ def main():
                 player.rect.y = SCREEN_HEIGHT - player.rect.height
                 player.level_won = False
                 player.die = False
-                player.star = False
+                player.chest = False
+                player.chest_now = False
         if player.die:
+            die_screen(screen)
             player.stop()
             player = Player()
 
@@ -429,13 +489,14 @@ def main():
             player.rect.y = SCREEN_HEIGHT - player.rect.height
             player.level_won = False
             player.die = False
-            player.star = False
-        if player.star:
+            player.chest = False
+            player.chest_now = False
+        if player.chest and not player.chest_now:
             star = Star(50, 50)
             star.rect.x = 20
             star.rect.y = 20
             active_sprite_list.add(star)
-            player.star = False
+            player.chest_now = True
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:  # Если закрыл программу, то останавливаем цикл
