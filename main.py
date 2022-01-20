@@ -11,9 +11,9 @@ score = 0
 
 
 # Подключение фото для заднего фона
-bg = pygame.image.load('bg.jpg')
+bg = pygame.image.load('data/bg.jpg')
 bg = pygame.transform.scale(bg, (SCREEN_WIDTH, SCREEN_HEIGHT))
-bgd = pygame.image.load('bgd.jpg')
+bgd = pygame.image.load('data/bgd.jpg')
 
 
 # Класс, описывающий поведение главного игрока
@@ -25,7 +25,7 @@ class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
 
-        self.image = pygame.image.load('dino.png')
+        self.image = pygame.image.load('data/dino.png')
         self.image = pygame.transform.scale(self.image, (45, 70))
         self.rect = self.image.get_rect()
 
@@ -131,7 +131,7 @@ class Player(pygame.sprite.Sprite):
 class Chest(pygame.sprite.Sprite):
     def __init__(self, width, height):
         super().__init__()
-        self.image = pygame.image.load('treasure.png')
+        self.image = pygame.image.load('data/treasure.png')
         self.image = pygame.transform.scale(self.image, (width, height))
         self.rect = self.image.get_rect()
 
@@ -139,7 +139,7 @@ class Chest(pygame.sprite.Sprite):
 class Star(pygame.sprite.Sprite):
     def __init__(self, width, height):
         super().__init__()
-        self.image = pygame.image.load('starIcon.png')
+        self.image = pygame.image.load('data/starIcon.png')
         self.image = pygame.transform.scale(self.image, (width, height))
         self.rect = self.image.get_rect()
 
@@ -147,7 +147,7 @@ class Star(pygame.sprite.Sprite):
 class Grey_Star(pygame.sprite.Sprite):
     def __init__(self, width, height):
         super().__init__()
-        self.image = pygame.image.load('grey_starIcon.png')
+        self.image = pygame.image.load('data/grey_starIcon.png')
         self.image = pygame.transform.scale(self.image, (width, height))
         self.rect = self.image.get_rect()
 
@@ -155,7 +155,7 @@ class Grey_Star(pygame.sprite.Sprite):
 class Trap(pygame.sprite.Sprite):
     def __init__(self, width, height):
         super().__init__()
-        self.image = pygame.image.load('trap.png')
+        self.image = pygame.image.load('data/trap.png')
         self.image = pygame.transform.scale(self.image, (width, height))
         self.rect = self.image.get_rect()
 
@@ -164,7 +164,7 @@ class Trap(pygame.sprite.Sprite):
 class Door(pygame.sprite.Sprite):
     def __init__(self, width, height):
         super().__init__()
-        self.image = pygame.transform.scale(pygame.image.load('Door01.png'), (width, height))
+        self.image = pygame.transform.scale(pygame.image.load('data/Door01.png'), (width, height))
         self.rect = self.image.get_rect()
 
 
@@ -174,7 +174,7 @@ class Platform(pygame.sprite.Sprite):
         # Конструктор платформ
         super().__init__()
         # Также указываем фото платформы
-        self.image = pygame.image.load('platform.png')
+        self.image = pygame.image.load('data/platform.png')
         self.image = pygame.transform.scale(self.image, (width, height))
         self.rect = self.image.get_rect()
 
@@ -400,7 +400,7 @@ def die_screen(screen):
         pygame.display.flip()
 
 def music():
-    pygame.mixer.music.load("ethernight-club-by-kevin-macleod-from-filmmusic-io.mp3")
+    pygame.mixer.music.load("data/ethernight-club-by-kevin-macleod-from-filmmusic-io.mp3")
     pygame.mixer.music.play(loops=-1, start=0.0, fade_ms=0)
     pygame.mixer.music.set_volume(0.2)
 
@@ -418,7 +418,7 @@ def main():
 
     # Название игры
     pygame.display.set_caption("Платформер")
-    level_list = ['level_1', 'level_2', 'level_3', 'level_4', 'level_5']
+    level_list = ['data/level_1', 'data/level_2', 'data/level_3', 'data/level_4', 'data/level_5']
     number_of_levels = 4
 
     # Создаем игрока
